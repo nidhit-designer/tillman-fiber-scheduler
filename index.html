@@ -983,6 +983,116 @@
     margin-left: -4px;
   }
   .ga-dropdown-arrow:hover { background: rgba(255,255,255,0.25); }
+
+  /* === LEGACY VIEW === */
+  .view-container { display: none; }
+  .view-container.active { display: contents; }
+
+  .legacy-view {
+    display: none;
+    flex-direction: column;
+    height: calc(100vh - 136px);
+    background: var(--sf-white);
+  }
+  .legacy-view.active { display: flex; }
+
+  .legacy-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--sf-white);
+    border-bottom: 1px solid var(--sf-border);
+    gap: 8px;
+  }
+
+  .legacy-grid-wrapper {
+    flex: 1;
+    overflow: auto;
+  }
+  .legacy-grid {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .legacy-grid th {
+    background: #f8f9fa;
+    border: 1px solid var(--sf-border);
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+    color: var(--sf-text);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .legacy-grid th.day-col { text-align: center; }
+  .legacy-grid td {
+    border: 1px solid var(--sf-border-light);
+    padding: 8px 12px;
+    font-size: 12px;
+    vertical-align: top;
+    height: 60px;
+  }
+  .legacy-grid td.resource-name-cell {
+    font-weight: 600;
+    background: #fafafa;
+    white-space: nowrap;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    border-right: 2px solid var(--sf-border);
+  }
+  .legacy-job-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    margin: 1px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .legacy-job-pill.blue-pill { background: #d4edfc; color: #0070d2; }
+  .legacy-job-pill.green-pill { background: #d1f0ee; color: #04837b; }
+  .legacy-job-pill.orange-pill { background: #fef3e0; color: #a86403; }
+  .legacy-job-pill.purple-pill { background: #e8d5f5; color: #730394; }
+
+  .legacy-empty-state {
+    color: var(--sf-text-secondary);
+    font-size: 11px;
+    font-style: italic;
+  }
+
+  /* Nav tab styling for legacy */
+  .sf-nav a.legacy-tab {
+    color: var(--sf-text-secondary);
+  }
+  .sf-nav a.legacy-tab.active-tab {
+    color: var(--sf-text);
+    font-weight: 600;
+    border-bottom-color: var(--sf-text);
+  }
+  .sf-nav a .tab-close {
+    margin-left: 6px;
+    font-size: 14px;
+    color: var(--sf-text-secondary);
+    cursor: pointer;
+  }
+  .sf-nav a .tab-close:hover { color: var(--sf-red); }
+
+  .deprecated-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--sf-orange-light);
+    color: var(--sf-orange);
+    font-weight: 700;
+    margin-left: 4px;
+    vertical-align: 1px;
+  }
 </style>
 </head>
 <body>
@@ -1012,8 +1122,12 @@
   <a href="#">Trackers</a>
   <a href="#">Bids</a>
   <a href="#">Reports</a>
-  <a class="active-tab" href="#">* Job Scheduler 2.0</a>
+  <a class="legacy-tab active-tab" href="#" onclick="switchView('legacy', this); return false;">Job Scheduler<span class="deprecated-badge">LEGACY</span></a>
+  <a href="#" onclick="switchView('v2', this); return false;">* Job Scheduler 2.0</a>
 </div>
+
+<!-- ==================== LEGACY VIEW ==================== -->
+<div class="legacy-view active" id="legacyView">
 
 <!-- GA BANNER -->
 <div class="ga-banner" id="gaBanner">
@@ -1027,7 +1141,7 @@
     </div>
   </div>
   <div class="ga-banner-actions">
-    <button class="ga-btn switch-btn" onclick="window.location.hash='#scheduler2'">
+    <button class="ga-btn switch-btn" onclick="switchView('v2', document.querySelector('.sf-nav a:last-child'))">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a6e5c" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       Switch to Job Scheduler 2.0
     </button>
@@ -1036,6 +1150,146 @@
     <span class="ga-dropdown-arrow" title="More options">&#9662;</span>
   </div>
 </div>
+
+<!-- LEGACY TOOLBAR -->
+<div class="legacy-toolbar">
+  <button class="toolbar-btn primary" title="Schedule View">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="3" y="4" width="18" height="18" rx="2" stroke="white" fill="none" stroke-width="2"/><path d="M3 10h18M8 2v4M16 2v4" stroke="white" stroke-width="2"/></svg>
+    Schedule
+  </button>
+  <button class="toolbar-btn">Map</button>
+  <select class="toolbar-select">
+    <option>My Dispatch View</option>
+    <option>All Resources</option>
+  </select>
+  <div class="spacer"></div>
+  <select class="toolbar-select">
+    <option>Weekly</option>
+    <option>Daily</option>
+  </select>
+  <div class="date-nav">
+    <span class="nav-arrow">&laquo;</span>
+    <span class="nav-arrow">&lsaquo;</span>
+    <div class="date-range">3/10/2026 - 3/16/2026</div>
+    <span class="nav-arrow">&rsaquo;</span>
+    <span class="nav-arrow">&raquo;</span>
+  </div>
+</div>
+
+<!-- LEGACY GRID -->
+<div class="legacy-grid-wrapper">
+  <table class="legacy-grid">
+    <thead>
+      <tr>
+        <th style="width:180px;">Resource</th>
+        <th class="day-col">Tue, Mar 10</th>
+        <th class="day-col">Wed, Mar 11</th>
+        <th class="day-col">Thu, Mar 12</th>
+        <th class="day-col">Fri, Mar 13</th>
+        <th class="day-col">Sat, Mar 14</th>
+        <th class="day-col">Sun, Mar 15</th>
+        <th class="day-col">Mon, Mar 16</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="resource-name-cell">Alpha Crew<br><span style="font-weight:400;font-size:10px;color:#706e6b">Broadpeak Construction</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003380 Conduit</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003380 Conduit</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003380 Conduit</span><br><span class="legacy-job-pill green-pill">TF-003392 Underground</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003392 Underground</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003392 Underground</span></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">Bravo Crew<br><span style="font-weight:400;font-size:10px;color:#706e6b">FiberLine Contractors</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003375 Aerial</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003375 Aerial</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003375 Aerial</span></td>
+        <td class="legacy-empty-state"></td>
+        <td><span class="legacy-job-pill green-pill">TF-003388 Conduit</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003388 Conduit</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003388 Conduit</span></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">Charlie Crew<br><span style="font-weight:400;font-size:10px;color:#706e6b">NetBuild Solutions</span></td>
+        <td><span class="legacy-job-pill orange-pill">TF-003371 Aerial</span></td>
+        <td><span class="legacy-job-pill orange-pill">TF-003371 Aerial</span></td>
+        <td><span class="legacy-job-pill orange-pill">TF-003371 Aerial</span></td>
+        <td><span class="legacy-job-pill orange-pill">TF-003371 Aerial</span></td>
+        <td><span class="legacy-job-pill orange-pill">TF-003371 Aerial</span></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">Delta Splice<br><span style="font-weight:400;font-size:10px;color:#706e6b">CableWorks Inc</span></td>
+        <td class="legacy-empty-state"></td>
+        <td><span class="legacy-job-pill purple-pill">TF-003365 Splicing</span></td>
+        <td><span class="legacy-job-pill purple-pill">TF-003365 Splicing</span></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">Maria Santos<br><span style="font-weight:400;font-size:10px;color:#706e6b">Summit Fiber Co</span></td>
+        <td><span class="legacy-job-pill purple-pill">TF-003360 Splice</span></td>
+        <td><span class="legacy-job-pill purple-pill">TF-003360 Splice</span></td>
+        <td><span class="legacy-job-pill purple-pill">TF-003360 Splice</span></td>
+        <td><span class="legacy-job-pill purple-pill">TF-003360 Splice</span></td>
+        <td class="legacy-empty-state"></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003393 Splicing</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003393 Splicing</span></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">James Chen<br><span style="font-weight:400;font-size:10px;color:#706e6b">Tillman Fiber (Direct)</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003350 QC Insp.</span></td>
+        <td class="legacy-empty-state"></td>
+        <td><span class="legacy-job-pill green-pill">TF-003351 QC Insp.</span></td>
+        <td class="legacy-empty-state"></td>
+        <td><span class="legacy-job-pill green-pill">TF-003352 QC Insp.</span></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">Priya Patel<br><span style="font-weight:400;font-size:10px;color:#706e6b">Tillman Fiber (Direct)</span></td>
+        <td class="legacy-empty-state"></td>
+        <td><span class="legacy-job-pill green-pill">TF-003346 QC Insp.</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003346 QC Insp.</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003353 QC Insp.</span></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">Echo Install<br><span style="font-weight:400;font-size:10px;color:#706e6b">PrimePath Utilities</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003340 Install</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003340 Install</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003340 Install</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003340 Install</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003340 Install</span></td>
+        <td class="legacy-empty-state"></td>
+        <td class="legacy-empty-state"></td>
+      </tr>
+      <tr>
+        <td class="resource-name-cell">Ryan Torres<br><span style="font-weight:400;font-size:10px;color:#706e6b">Vanguard Telecom Build</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003335 Install</span></td>
+        <td><span class="legacy-job-pill green-pill">TF-003335 Install</span></td>
+        <td class="legacy-empty-state"></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003336 Install</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003336 Install</span></td>
+        <td><span class="legacy-job-pill blue-pill">TF-003336 Install</span></td>
+        <td class="legacy-empty-state"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div><!-- end legacyView -->
+
+<!-- ==================== JOB SCHEDULER 2.0 VIEW ==================== -->
+<div id="v2View" style="display:none; flex-direction:column;">
 
 <!-- TOOLBAR -->
 <div class="toolbar">
@@ -1133,6 +1387,8 @@
   </div>
 
 </div>
+
+</div><!-- end v2View -->
 
 <!-- EDIT OVERLAY -->
 <div class="edit-overlay" id="editOverlay" onclick="if(event.target===this)closeEdit()">
@@ -1864,6 +2120,30 @@ function showToast(msg) {
   toast.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${msg}`;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ============ VIEW SWITCHING ============
+function switchView(view, clickedTab) {
+  const legacyView = document.getElementById('legacyView');
+  const v2View = document.getElementById('v2View');
+  const navTabs = document.querySelectorAll('.sf-nav a');
+
+  // Remove active-tab from all nav links
+  navTabs.forEach(t => t.classList.remove('active-tab'));
+
+  if (clickedTab) {
+    clickedTab.classList.add('active-tab');
+  }
+
+  if (view === 'legacy') {
+    legacyView.classList.add('active');
+    legacyView.style.display = 'flex';
+    v2View.style.display = 'none';
+  } else {
+    legacyView.classList.remove('active');
+    legacyView.style.display = 'none';
+    v2View.style.display = 'contents';
+  }
 }
 
 // ============ INIT ============
