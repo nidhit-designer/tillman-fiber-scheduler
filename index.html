@@ -172,13 +172,13 @@
     background-repeat: no-repeat;
     background-position: right 8px center;
   }
-  .toolbar .spacer { flex: 1; }
-  .toolbar .date-nav {
+  .toolbar .spacer, .legacy-toolbar .spacer { flex: 1; }
+  .toolbar .date-nav, .legacy-toolbar .date-nav {
     display: flex;
     align-items: center;
     gap: 4px;
   }
-  .toolbar .date-nav .date-range {
+  .toolbar .date-nav .date-range, .legacy-toolbar .date-nav .date-range {
     padding: 5px 10px;
     border: 1px solid var(--sf-border);
     border-radius: 4px;
