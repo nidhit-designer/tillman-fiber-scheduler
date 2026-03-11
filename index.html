@@ -205,7 +205,7 @@
   /* === MAIN LAYOUT === */
   .main-layout {
     display: flex;
-    height: calc(100vh - 136px);
+    height: calc(100vh - 200px);
   }
 
   /* === LEFT PANEL (JOBS) === */
@@ -889,6 +889,100 @@
     align-items: center;
     gap: 6px;
   }
+
+  /* === GA BANNER === */
+  .ga-banner {
+    background: linear-gradient(135deg, #1a6e5c 0%, #1a8a70 40%, #1a6e5c 100%);
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .ga-banner-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .ga-banner-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ga-banner-title .ga-badge {
+    background: rgba(255,255,255,0.2);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .ga-banner-body {
+    font-size: 12.5px;
+    line-height: 1.5;
+    opacity: 0.92;
+  }
+  .ga-banner-body strong {
+    color: #ffd54f;
+    font-weight: 700;
+  }
+  .ga-banner-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .ga-btn {
+    padding: 7px 18px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    border: none;
+    transition: all 0.15s;
+  }
+  .ga-btn.switch-btn {
+    background: white;
+    color: #1a6e5c;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .ga-btn.switch-btn:hover { background: #f0faf6; }
+  .ga-btn.switch-btn svg { vertical-align: -2px; margin-right: 4px; }
+  .ga-btn.whats-new {
+    background: rgba(255,255,255,0.15);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.35);
+  }
+  .ga-btn.whats-new:hover { background: rgba(255,255,255,0.25); }
+  .ga-btn.dismiss-btn {
+    background: transparent;
+    color: rgba(255,255,255,0.75);
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 7px 14px;
+  }
+  .ga-btn.dismiss-btn:hover { color: white; border-color: rgba(255,255,255,0.5); }
+  .ga-dropdown-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 4px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: -4px;
+  }
+  .ga-dropdown-arrow:hover { background: rgba(255,255,255,0.25); }
 </style>
 </head>
 <body>
@@ -919,6 +1013,28 @@
   <a href="#">Bids</a>
   <a href="#">Reports</a>
   <a class="active-tab" href="#">* Job Scheduler 2.0</a>
+</div>
+
+<!-- GA BANNER -->
+<div class="ga-banner" id="gaBanner">
+  <div class="ga-banner-content">
+    <div class="ga-banner-title">
+      Job Scheduler 2.0 is Here — Upgrade to the New Experience
+      <span class="ga-badge">NOW AVAILABLE</span>
+    </div>
+    <div class="ga-banner-body">
+      Job Scheduler 2.0 is now generally available with enhanced scheduling, inline editing, and draft mode. The legacy scheduler will be retired on <strong>June 30, 2026</strong>. We recommend switching to the new experience to ensure a smooth transition.
+    </div>
+  </div>
+  <div class="ga-banner-actions">
+    <button class="ga-btn switch-btn" onclick="window.location.hash='#scheduler2'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1a6e5c" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      Switch to Job Scheduler 2.0
+    </button>
+    <button class="ga-btn whats-new">What's New</button>
+    <button class="ga-btn dismiss-btn" onclick="document.getElementById('gaBanner').style.display='none'">Dismiss</button>
+    <span class="ga-dropdown-arrow" title="More options">&#9662;</span>
+  </div>
 </div>
 
 <!-- TOOLBAR -->
