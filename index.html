@@ -177,6 +177,8 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
   }
   .toolbar .date-nav .date-range, .legacy-toolbar .date-nav .date-range {
     padding: 5px 10px;
@@ -1003,6 +1005,7 @@
     background: var(--sf-white);
     border-bottom: 1px solid var(--sf-border);
     gap: 8px;
+    flex-wrap: nowrap;
   }
 
   .legacy-grid-wrapper {
