@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tillman Fiber - Job Scheduler</title>
+<style>
+  :root {
+    --sf-blue: #0176d3;
+    --sf-blue-dark: #014486;
+    --sf-blue-light: #e8f4fd;
+    --sf-header-bg: #1b2a4a;
+    --sf-nav-bg: #f3f3f3;
+    --sf-border: #dddbda;
+    --sf-border-light: #e5e5e5;
+    --sf-text: #181818;
+    --sf-text-secondary: #706e6b;
+    --sf-text-inverse: #ffffff;
+    --sf-bg: #f4f6f9;
+    --sf-white: #ffffff;
+    --sf-green: #2e844a;
+    --sf-green-light: #e3f6e8;
+    --sf-orange: #dd7a01;
+    --sf-orange-light: #fef3e0;
+    --sf-red: #ea001e;
+    --sf-red-light: #fce4e4;
+    --sf-purple: #730394;
+    --sf-yellow: #ffc107;
+    --sf-cyan: #0d9ddb;
+    --job-blue: #1589ee;
+    --job-blue-bg: #d4edfc;
+    --job-teal: #04a69b;
+    --job-teal-bg: #d1f0ee;
+    --draft-bg: #fff8e1;
+    --draft-border: #f9a825;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Salesforce Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--sf-bg);
+    color: var(--sf-text);
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* === HEADER === */
+  .sf-header {
+    background: var(--sf-header-bg);
+    height: 45px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    border-bottom: 3px solid var(--sf-blue);
+  }
+  .sf-header .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--sf-text-inverse);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .sf-header .logo svg { width: 24px; height: 24px; }
+  .sf-header .org-name {
+    color: #b0c4de;
+    font-size: 12px;
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .sf-header .search-bar {
+    flex: 0 1 350px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .sf-header .search-bar input {
+    width: 100%;
+    padding: 6px 12px 6px 32px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    color: white;
+    font-size: 13px;
+    outline: none;
+  }
+  .sf-header .search-bar input::placeholder { color: rgba(255,255,255,0.5); }
+  .sf-header .search-bar input:focus {
+    background: white;
+    color: var(--sf-text);
+    border-color: var(--sf-blue);
+  }
+  .sf-header .search-bar input:focus::placeholder { color: var(--sf-text-secondary); }
+
+  /* === NAV BAR === */
+  .sf-nav {
+    background: var(--sf-white);
+    border-bottom: 1px solid var(--sf-border);
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 16px;
+    gap: 2px;
+    overflow-x: auto;
+  }
+  .sf-nav a {
+    text-decoration: none;
+    color: var(--sf-text);
+    padding: 8px 12px;
+    font-size: 12.5px;
+    white-space: nowrap;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .sf-nav a:hover { background: var(--sf-bg); }
+  .sf-nav .active-tab {
+    color: var(--sf-blue);
+    font-weight: 600;
+    border-bottom: 2px solid var(--sf-blue);
+    border-radius: 0;
+    margin-bottom: -1px;
+    padding-bottom: 9px;
+  }
+
+  /* === TOOLBAR === */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--sf-white);
+    border-bottom: 1px solid var(--sf-border);
+    gap: 8px;
+  }
+  .toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border: 1px solid var(--sf-border);
+    border-radius: 4px;
+    background: var(--sf-white);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--sf-text);
+    transition: all 0.15s;
+  }
+  .toolbar-btn:hover { background: var(--sf-bg); }
+  .toolbar-btn.primary {
+    background: var(--sf-blue);
+    color: white;
+    border-color: var(--sf-blue);
+  }
+  .toolbar-btn.primary:hover { background: var(--sf-blue-dark); }
+  .toolbar-btn.draft-active {
+    background: var(--draft-bg);
+    border-color: var(--draft-border);
+    color: #795600;
+    font-weight: 600;
+  }
+  .toolbar-select {
+    padding: 5px 28px 5px 10px;
+    border: 1px solid var(--sf-border);
+    border-radius: 4px;
+    background: var(--sf-white);
+    font-size: 12px;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23706e6b'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .date-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .toolbar .date-nav .date-range {
+    padding: 5px 10px;
+    border: 1px solid var(--sf-border);
+    border-radius: 4px;
+    font-size: 12px;
+    min-width: 170px;
+    text-align: center;
+    background: var(--sf-white);
+  }
+  .nav-arrow {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--sf-border);
+    border-radius: 4px;
+    background: var(--sf-white);
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--sf-text-secondary);
+  }
+  .nav-arrow:hover { background: var(--sf-bg); }
+
+  /* === MAIN LAYOUT === */
+  .main-layout {
+    display: flex;
+    height: calc(100vh - 136px);
+  }
+
+  /* === LEFT PANEL (JOBS) === */
+  .jobs-panel {
+    width: 240px;
+    min-width: 240px;
+    background: var(--sf-white);
+    border-right: 1px solid var(--sf-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .jobs-panel-header {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--sf-border);
+  }
+  .jobs-panel-header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sf-text);
+  }
+  .collapse-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--sf-blue);
+    font-size: 16px;
+    border: none;
+    background: none;
+  }
+  .jobs-search {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--sf-border);
+  }
+  .jobs-search input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--sf-border);
+    border-radius: 4px;
+    font-size: 12px;
+    outline: none;
+  }
+  .jobs-search input:focus { border-color: var(--sf-blue); box-shadow: 0 0 0 1px var(--sf-blue); }
+  .jobs-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+  .job-card {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--sf-border-light);
+    cursor: grab;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .job-card:hover { background: var(--sf-blue-light); }
+  .job-card.dragging { opacity: 0.5; background: #e0e0e0; }
+  .job-card .job-id-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+  .job-card .job-id {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sf-blue);
+    cursor: pointer;
+  }
+  .job-card .job-status {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  .status-unassigned { background: #f3f2f2; color: var(--sf-text-secondary); }
+  .status-draft { background: var(--draft-bg); color: #795600; border: 1px solid var(--draft-border); }
+  .status-scheduled { background: var(--sf-blue-light); color: var(--sf-blue); }
+  .status-inprogress { background: var(--sf-green-light); color: var(--sf-green); }
+  .job-card .job-number {
+    font-size: 11px;
+    color: var(--sf-text-secondary);
+  }
+  .job-card .job-location {
+    font-size: 11.5px;
+    color: var(--sf-text);
+    margin-top: 2px;
+  }
+  .job-card .job-type {
+    font-size: 11.5px;
+    color: var(--sf-text);
+    font-weight: 500;
+  }
+  .job-card .job-priority {
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  .priority-high { color: var(--sf-red); font-weight: 600; }
+  .priority-medium { color: var(--sf-orange); font-weight: 600; }
+  .priority-normal { color: var(--sf-text-secondary); }
+  .job-card .job-tags {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .job-tag {
+    font-size: 10px;
+    padding: 1px 8px;
+    border-radius: 3px;
+    background: #e8e8e8;
+    color: var(--sf-text-secondary);
+    font-weight: 500;
+  }
+  .tag-construction { background: #d4edfc; color: #0070d2; }
+  .tag-splicing { background: #e8d5f5; color: #730394; }
+  .tag-inspection { background: #d1f0ee; color: #04837b; }
+  .tag-installation { background: #fef3e0; color: #a86403; }
+  .tag-permit { background: #fce4e4; color: #ba0517; }
+
+  /* === SCHEDULER (RIGHT) === */
+  .scheduler-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .scheduler-resources-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 8px;
+    background: var(--sf-white);
+    border-bottom: 1px solid var(--sf-border);
+  }
+  .scheduler-resources-header label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sf-text);
+  }
+  .resources-search {
+    padding: 5px 10px;
+    border: 1px solid var(--sf-border);
+    border-radius: 4px;
+    font-size: 12px;
+    width: 200px;
+    outline: none;
+  }
+  .resources-search:focus { border-color: var(--sf-blue); }
+
+  .scheduler-grid-wrapper {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+  }
+
+  /* Grid Table */
+  .scheduler-grid {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .scheduler-grid th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8f9fa;
+    border: 1px solid var(--sf-border);
+    padding: 10px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    color: var(--sf-text);
+  }
+  .scheduler-grid th.today {
+    background: var(--sf-blue);
+    color: white;
+  }
+  .scheduler-grid th.resource-col {
+    width: 200px;
+    min-width: 200px;
+    text-align: left;
+    padding-left: 16px;
+    background: #f8f9fa;
+    z-index: 11;
+    position: sticky;
+    left: 0;
+  }
+  .scheduler-grid td {
+    border: 1px solid var(--sf-border-light);
+    padding: 0;
+    height: 80px;
+    vertical-align: top;
+    position: relative;
+    background: var(--sf-white);
+  }
+  .scheduler-grid td.resource-cell {
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: var(--sf-white);
+    padding: 8px 12px;
+    border-right: 2px solid var(--sf-border);
+    vertical-align: middle;
+  }
+  .scheduler-grid td.today-col {
+    background: #f0f7ff;
+  }
+  .scheduler-grid td.drop-target {
+    background: #e3f1fd !important;
+    outline: 2px dashed var(--sf-blue);
+    outline-offset: -2px;
+  }
+
+  .resource-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .resource-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  .avatar-crew { background: #7b8b9e; }
+  .avatar-person { background: var(--sf-blue); }
+  .resource-details { min-width: 0; }
+  .resource-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sf-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .resource-type {
+    font-size: 10.5px;
+    color: var(--sf-text-secondary);
+  }
+  .resource-tags {
+    display: flex;
+    gap: 3px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+  }
+  .resource-tag {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #e8e8e8;
+    color: var(--sf-text-secondary);
+  }
+  .queue-link {
+    font-size: 10.5px;
+    color: var(--sf-blue);
+    cursor: pointer;
+    margin-top: 2px;
+    display: block;
+  }
+  .queue-link:hover { text-decoration: underline; }
+
+  /* Section Header Row */
+  .section-row td {
+    background: #f8f9fa !important;
+    border-bottom: 1px solid var(--sf-border);
+    height: auto !important;
+    padding: 6px 12px !important;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--sf-text);
+  }
+  .section-toggle {
+    cursor: pointer;
+    font-size: 10px;
+    color: var(--sf-text-secondary);
+  }
+
+  /* === JOB BLOCKS === */
+  .job-block {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    overflow: hidden;
+    z-index: 2;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: box-shadow 0.15s;
+    min-height: 36px;
+  }
+  .job-block:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .job-block.blue {
+    background: linear-gradient(135deg, #1589ee, #0070d2);
+    color: white;
+  }
+  .job-block.teal {
+    background: linear-gradient(135deg, #04a69b, #028a7e);
+    color: white;
+  }
+  .job-block.orange {
+    background: linear-gradient(135deg, #f4a430, #dd7a01);
+    color: white;
+  }
+  .job-block.green {
+    background: linear-gradient(135deg, #4bca81, #2e844a);
+    color: white;
+  }
+  .job-block.purple {
+    background: linear-gradient(135deg, #9c5cdb, #730394);
+    color: white;
+  }
+  .job-block.draft-block {
+    background: repeating-linear-gradient(
+      -45deg,
+      #fff8e1,
+      #fff8e1 5px,
+      #fff3cd 5px,
+      #fff3cd 10px
+    );
+    color: #795600;
+    border: 2px dashed var(--draft-border);
+    box-shadow: none;
+  }
+  .job-block .block-date {
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.9;
+  }
+  .job-block .block-title {
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .job-block .block-crew-dots {
+    display: flex;
+    gap: 2px;
+    margin-top: 3px;
+  }
+  .crew-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: white;
+    border: 1.5px solid rgba(255,255,255,0.7);
+  }
+  .crew-dot.extra {
+    background: rgba(255,255,255,0.3);
+    font-size: 9px;
+  }
+  /* Multi-day span */
+  .job-block.span {
+    right: -4px;
+  }
+  .job-block.span-start {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    right: 0;
+  }
+  .job-block.span-mid {
+    border-radius: 0;
+    left: 0;
+    right: 0;
+  }
+  .job-block.span-end {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    left: 0;
+  }
+
+  /* Extend handle */
+  .extend-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: e-resize;
+    background: rgba(255,255,255,0.2);
+    border-left: 2px solid rgba(255,255,255,0.4);
+    border-radius: 0 4px 4px 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .job-block:hover .extend-handle { opacity: 1; }
+
+  /* === INLINE EDIT PANEL === */
+  .edit-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 100;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 80px;
+  }
+  .edit-overlay.active { display: flex; }
+  .edit-panel {
+    background: var(--sf-white);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    width: 640px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .edit-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--sf-border);
+    background: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+  }
+  .edit-panel-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .edit-panel-header .status-pill {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 12px;
+  }
+  .edit-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--sf-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  .edit-close:hover { background: #e5e5e5; }
+
+  .edit-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--sf-border);
+    background: var(--sf-white);
+  }
+  .edit-tab {
+    padding: 10px 20px;
+    font-size: 12.5px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--sf-text-secondary);
+    transition: all 0.15s;
+  }
+  .edit-tab:hover { color: var(--sf-text); }
+  .edit-tab.active {
+    color: var(--sf-blue);
+    border-bottom-color: var(--sf-blue);
+    font-weight: 600;
+  }
+
+  .edit-body {
+    padding: 20px;
+  }
+  .edit-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sf-text);
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--sf-border-light);
+  }
+  .edit-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .edit-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sf-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .edit-field input, .edit-field select, .edit-field textarea {
+    padding: 7px 10px;
+    border: 1px solid var(--sf-border);
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+    background: var(--sf-white);
+    font-family: inherit;
+  }
+  .edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus {
+    border-color: var(--sf-blue);
+    box-shadow: 0 0 0 1px var(--sf-blue);
+  }
+  .edit-field textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  .edit-field .field-hint {
+    font-size: 10px;
+    color: var(--sf-text-secondary);
+    font-style: italic;
+  }
+
+  .edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--sf-border);
+    background: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+  }
+  .edit-btn {
+    padding: 7px 20px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--sf-border);
+    background: var(--sf-white);
+    color: var(--sf-text);
+    transition: all 0.15s;
+  }
+  .edit-btn:hover { background: var(--sf-bg); }
+  .edit-btn.save {
+    background: var(--sf-blue);
+    color: white;
+    border-color: var(--sf-blue);
+  }
+  .edit-btn.save:hover { background: var(--sf-blue-dark); }
+  .edit-btn.extend {
+    background: var(--sf-green);
+    color: white;
+    border-color: var(--sf-green);
+  }
+  .edit-btn.mark-complete {
+    background: var(--sf-white);
+    color: var(--sf-green);
+    border-color: var(--sf-green);
+  }
+
+  /* === DRAFT MODE BANNER === */
+  .draft-banner {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--draft-bg);
+    border-bottom: 2px solid var(--draft-border);
+    font-size: 12.5px;
+  }
+  .draft-banner.active { display: flex; }
+  .draft-banner .draft-icon {
+    font-size: 16px;
+  }
+  .draft-banner .draft-text {
+    font-weight: 600;
+    color: #795600;
+  }
+  .draft-banner .draft-count {
+    background: var(--draft-border);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .draft-banner .spacer { flex: 1; }
+  .draft-banner .draft-publish {
+    padding: 5px 16px;
+    background: var(--sf-green);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .draft-banner .draft-publish:hover { background: #267038; }
+  .draft-banner .draft-discard {
+    padding: 5px 16px;
+    background: var(--sf-white);
+    color: var(--sf-red);
+    border: 1px solid var(--sf-red);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  /* === TOAST === */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #2e844a;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.show { display: flex; animation: slideIn 0.3s ease; }
+  @keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* Vendor badge */
+  .vendor-badge {
+    display: inline-block;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #e8d5f5;
+    color: #730394;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #f1f1f1; }
+  ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #999; }
+
+  /* Street sheet highlight */
+  .street-sheet-section {
+    background: #f0f7ff;
+    border: 1px solid #b4d6f5;
+    border-radius: 6px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .street-sheet-section .edit-section-title {
+    color: var(--sf-blue);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="sf-header">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    SITETRACKER
+    <span class="org-name">Tillman Fiber</span>
+  </div>
+  <div class="search-bar">
+    <input type="text" placeholder="Search...">
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="sf-nav">
+  <a href="#">Home</a>
+  <a href="#">Chatter</a>
+  <a href="#">Sitetracker Maps</a>
+  <a href="#">Sites</a>
+  <a href="#">Areas</a>
+  <a href="#">Projects</a>
+  <a href="#">Jobs</a>
+  <a href="#">Job Planning</a>
+  <a href="#">Trackers</a>
+  <a href="#">Bids</a>
+  <a href="#">Reports</a>
+  <a class="active-tab" href="#">* Job Scheduler 2.0</a>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="toolbar-btn primary" title="Schedule View">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="3" y="4" width="18" height="18" rx="2" stroke="white" fill="none" stroke-width="2"/><path d="M3 10h18M8 2v4M16 2v4" stroke="white" stroke-width="2"/></svg>
+    Schedule
+  </button>
+  <button class="toolbar-btn" title="Map View">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+    Map
+  </button>
+  <button class="toolbar-btn" title="Split Screen">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+    Split Screen
+  </button>
+  <select class="toolbar-select">
+    <option>My Dispatch View</option>
+    <option>All Crews</option>
+    <option>Construction Vendors</option>
+    <option>QC Inspectors</option>
+  </select>
+  <button class="toolbar-btn draft-toggle" id="draftToggle" onclick="toggleDraftMode()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Draft Mode
+  </button>
+  <div class="spacer"></div>
+  <select class="toolbar-select">
+    <option>Weekly</option>
+    <option>Daily</option>
+    <option>Bi-Weekly</option>
+    <option>Monthly</option>
+  </select>
+  <div class="date-nav">
+    <span class="nav-arrow">&laquo;</span>
+    <span class="nav-arrow">&lsaquo;</span>
+    <div class="date-range">3/10/2026 - 3/16/2026</div>
+    <span class="nav-arrow">&rsaquo;</span>
+    <span class="nav-arrow">&raquo;</span>
+  </div>
+  <button class="toolbar-btn" onclick="location.reload()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  </button>
+</div>
+
+<!-- DRAFT BANNER -->
+<div class="draft-banner" id="draftBanner">
+  <span class="draft-icon">&#9998;</span>
+  <span class="draft-text">DRAFT MODE</span>
+  <span class="draft-count" id="draftCount">0 drafts</span>
+  <span style="color:#795600">Drag jobs to schedule. Changes won't apply until published.</span>
+  <div class="spacer"></div>
+  <button class="draft-publish" onclick="publishDrafts()">Publish All</button>
+  <button class="draft-discard" onclick="discardDrafts()">Discard</button>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+
+  <!-- JOBS PANEL -->
+  <div class="jobs-panel">
+    <div class="jobs-panel-header">
+      <h3>Jobs</h3>
+      <button class="collapse-btn">&laquo;</button>
+    </div>
+    <div class="jobs-search">
+      <input type="text" placeholder="&#128269; Search Jobs" id="jobSearch" oninput="filterJobs()">
+    </div>
+    <div class="jobs-list" id="jobsList"></div>
+  </div>
+
+  <!-- SCHEDULER -->
+  <div class="scheduler-panel">
+    <div class="scheduler-resources-header">
+      <label>Resources</label>
+      <input type="text" class="resources-search" placeholder="&#128269; Search Resources">
+      <div class="spacer"></div>
+    </div>
+    <div class="scheduler-grid-wrapper">
+      <table class="scheduler-grid" id="schedulerGrid">
+        <thead>
+          <tr>
+            <th class="resource-col"></th>
+            <th class="today">Tue, Mar 10</th>
+            <th>Wed, Mar 11</th>
+            <th>Thu, Mar 12</th>
+            <th>Fri, Mar 13</th>
+            <th>Sat, Mar 14</th>
+            <th>Sun, Mar 15</th>
+            <th>Mon, Mar 16</th>
+          </tr>
+        </thead>
+        <tbody id="schedulerBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- EDIT OVERLAY -->
+<div class="edit-overlay" id="editOverlay" onclick="if(event.target===this)closeEdit()">
+  <div class="edit-panel">
+    <div class="edit-panel-header">
+      <h3>
+        <span id="editJobId">TF-003421</span>
+        <span class="status-pill status-inprogress" id="editStatus">In Progress</span>
+      </h3>
+      <button class="edit-close" onclick="closeEdit()">&times;</button>
+    </div>
+    <div class="edit-tabs">
+      <div class="edit-tab active" onclick="switchTab(this,'details')">Details</div>
+      <div class="edit-tab" onclick="switchTab(this,'streetsheet')">Street Sheet</div>
+      <div class="edit-tab" onclick="switchTab(this,'scheduling')">Scheduling</div>
+      <div class="edit-tab" onclick="switchTab(this,'vendor')">Vendor</div>
+    </div>
+    <div class="edit-body" id="editBody">
+      <!-- Dynamic content -->
+    </div>
+    <div class="edit-actions">
+      <button class="edit-btn mark-complete" onclick="markComplete()">Mark Complete</button>
+      <button class="edit-btn extend" onclick="extendJob()">Extend +1 Day</button>
+      <button class="edit-btn" onclick="closeEdit()">Cancel</button>
+      <button class="edit-btn save" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATA ============
+const vendors = [
+  "Broadpeak Construction", "FiberLine Contractors", "NetBuild Solutions", "CableWorks Inc",
+  "Summit Fiber Co", "PrimePath Utilities", "Vanguard Telecom Build", "CoreLink Builders",
+  "Apex Fiber Solutions", "TerraComm Construction", "ProGrid Networks", "PulseWave Contractors",
+  "StrataConnect Build", "OmniLine Utilities", "SkyFiber Builders"
+];
+
+const unassignedJobs = [
+  { id: "TF-003421", num: "J-003421", location: "1247 Elm St, Hartford", type: "Fiber Splicing", priority: "High", tags: ["Splicing"], streetData: {} },
+  { id: "TF-003419", num: "J-003419", location: "890 Oak Ave, West Hartford", type: "Conduit Construction", priority: "High", tags: ["Construction"], streetData: {} },
+  { id: "TF-003418", num: "J-003418", location: "2301 Main St, Newington", type: "Aerial Construction", priority: "High", tags: ["Construction"], streetData: {} },
+  { id: "TF-003415", num: "J-003415", location: "445 Cedar Ln, Glastonbury", type: "QC Inspection", priority: "Medium", tags: ["Inspection"], streetData: {} },
+  { id: "TF-003412", num: "J-003412", location: "78 Pine Rd, Wethersfield", type: "Permit Prep", priority: "Medium", tags: ["Permit"], streetData: {} },
+  { id: "TF-003410", num: "J-003410", location: "1560 Maple Dr, Bloomfield", type: "Underground Construction", priority: "High", tags: ["Construction"], streetData: {} },
+  { id: "TF-003408", num: "J-003408", location: "332 Birch St, Windsor", type: "Fiber Installation", priority: "Normal", tags: ["Installation"], streetData: {} },
+  { id: "TF-003405", num: "J-003405", location: "2100 River Rd, East Hartford", type: "Splice Closure", priority: "High", tags: ["Splicing"], streetData: {} },
+  { id: "TF-003401", num: "J-003401", location: "599 Valley St, Manchester", type: "Conduit Construction", priority: "Medium", tags: ["Construction"], streetData: {} },
+  { id: "TF-003399", num: "J-003399", location: "1804 Brook Ave, Vernon", type: "Aerial Construction", priority: "Normal", tags: ["Construction"], streetData: {} },
+];
+
+const resources = [
+  {
+    section: "Construction Crews",
+    items: [
+      {
+        name: "Alpha Crew", type: "Crew", vendor: "Broadpeak Construction", avatar: "AC", color: "avatar-crew",
+        tags: ["Construction", "+4"],
+        queue: 3,
+        jobs: [
+          { id: "TF-003380", title: "1100 Park St, Hartford", type: "Conduit Construction", days: [0,1,2,3], color: "blue", status: "In Progress" },
+          { id: "TF-003392", title: "550 River Ln, E. Hartford", type: "Underground Const.", days: [2,3,4], color: "teal", top: 44, status: "Scheduled" },
+        ]
+      },
+      {
+        name: "Bravo Crew", type: "Crew", vendor: "FiberLine Contractors", avatar: "BC", color: "avatar-crew",
+        tags: ["Construction", "+3"],
+        queue: 1,
+        jobs: [
+          { id: "TF-003375", title: "2400 Broad St, Hartford", type: "Aerial Construction", days: [0,1,2], color: "blue", status: "In Progress" },
+          { id: "TF-003388", title: "780 Asylum Ave, Hartford", type: "Conduit Construction", days: [4,5,6], color: "teal", status: "Scheduled" },
+        ]
+      },
+      {
+        name: "Charlie Crew", type: "Crew", vendor: "NetBuild Solutions", avatar: "CC", color: "avatar-crew",
+        tags: ["Aerial", "+2"],
+        queue: 2,
+        jobs: [
+          { id: "TF-003371", title: "910 Farmington Ave", type: "Aerial Construction", days: [0,1,2,3,4], color: "orange", status: "In Progress" },
+        ]
+      }
+    ]
+  },
+  {
+    section: "Splicing Teams",
+    items: [
+      {
+        name: "Delta Splice", type: "Crew", vendor: "CableWorks Inc", avatar: "DS", color: "avatar-crew",
+        tags: ["Splicing", "+2"],
+        queue: 2,
+        jobs: [
+          { id: "TF-003365", title: "1450 Capitol Ave, Hartford", type: "Fiber Splicing", days: [1,2], color: "purple", status: "Scheduled" },
+        ]
+      },
+      {
+        name: "Maria Santos", type: "Person", vendor: "Summit Fiber Co", avatar: "MS", color: "avatar-person",
+        tags: ["Splicing", "+3"],
+        queue: 1,
+        jobs: [
+          { id: "TF-003360", title: "300 Weston St, Hartford", type: "Splice Closure", days: [0,1,2,3], color: "purple", status: "In Progress" },
+          { id: "TF-003393", title: "88 Garden St, Hartford", type: "Fiber Splicing", days: [5,6], color: "blue", status: "Scheduled" },
+        ]
+      }
+    ]
+  },
+  {
+    section: "QC Inspectors",
+    items: [
+      {
+        name: "James Chen", type: "Person", vendor: "Tillman Fiber (Direct)", avatar: "JC", color: "avatar-person",
+        tags: ["Inspection", "+5"],
+        queue: 4,
+        jobs: [
+          { id: "TF-003350", title: "1247 Elm St, Hartford", type: "QC Inspection", days: [0], color: "green", status: "In Progress" },
+          { id: "TF-003351", title: "2301 Main St, Newington", type: "QC Inspection", days: [2], color: "green", status: "Scheduled" },
+          { id: "TF-003352", title: "445 Cedar Ln, Glastonbury", type: "QC Inspection", days: [4], color: "green", status: "Scheduled" },
+        ]
+      },
+      {
+        name: "Priya Patel", type: "Person", vendor: "Tillman Fiber (Direct)", avatar: "PP", color: "avatar-person",
+        tags: ["Inspection", "+3"],
+        queue: 2,
+        jobs: [
+          { id: "TF-003346", title: "890 Oak Ave, W. Hartford", type: "QC Inspection", days: [1,2], color: "green", status: "In Progress" },
+          { id: "TF-003353", title: "78 Pine Rd, Wethersfield", type: "QC Inspection", days: [3], color: "green", status: "Scheduled" },
+        ]
+      }
+    ]
+  },
+  {
+    section: "Installation Teams",
+    items: [
+      {
+        name: "Echo Install", type: "Crew", vendor: "PrimePath Utilities", avatar: "EI", color: "avatar-crew",
+        tags: ["Installation", "+3"],
+        queue: 1,
+        jobs: [
+          { id: "TF-003340", title: "1560 Maple Dr, Bloomfield", type: "Fiber Installation", days: [0,1,2,3,4], color: "teal", status: "In Progress" },
+        ]
+      },
+      {
+        name: "Ryan Torres", type: "Person", vendor: "Vanguard Telecom Build", avatar: "RT", color: "avatar-person",
+        tags: ["Installation", "+2"],
+        queue: 0,
+        jobs: [
+          { id: "TF-003335", title: "332 Birch St, Windsor", type: "Fiber Installation", days: [0,1], color: "teal", status: "In Progress" },
+          { id: "TF-003336", title: "599 Valley St, Manchester", type: "Fiber Installation", days: [3,4,5], color: "blue", status: "Scheduled" },
+        ]
+      }
+    ]
+  }
+];
+
+let draftMode = false;
+let draftCount = 0;
+let currentEditJob = null;
+
+// ============ RENDER JOBS PANEL ============
+function renderJobsList() {
+  const list = document.getElementById('jobsList');
+  const searchVal = document.getElementById('jobSearch').value.toLowerCase();
+  list.innerHTML = '';
+  unassignedJobs.filter(j => {
+    if (!searchVal) return true;
+    return j.id.toLowerCase().includes(searchVal) || j.location.toLowerCase().includes(searchVal) || j.type.toLowerCase().includes(searchVal);
+  }).forEach(job => {
+    const tagClass = job.tags[0] ? 'tag-' + job.tags[0].toLowerCase() : '';
+    const card = document.createElement('div');
+    card.className = 'job-card';
+    card.draggable = true;
+    card.dataset.jobId = job.id;
+    card.innerHTML = `
+      <div class="job-id-line">
+        <span class="job-id" onclick="openJobEdit('${job.id}')">${job.id}</span>
+        <span class="job-status status-unassigned">Unassigned</span>
+      </div>
+      <div class="job-number">${job.num}</div>
+      <div class="job-location">${job.location}</div>
+      <div class="job-type">${job.type}</div>
+      <div class="job-priority priority-${job.priority.toLowerCase()}">${job.priority}</div>
+      <div class="job-tags">
+        ${job.tags.map(t => `<span class="job-tag ${tagClass}">${t}</span>`).join('')}
+      </div>
+    `;
+    card.addEventListener('dragstart', onDragStart);
+    card.addEventListener('dragend', onDragEnd);
+    list.appendChild(card);
+  });
+}
+
+function filterJobs() { renderJobsList(); }
+
+// ============ RENDER SCHEDULER GRID ============
+function renderGrid() {
+  const body = document.getElementById('schedulerBody');
+  body.innerHTML = '';
+  const days = ['Tue 3/10','Wed 3/11','Thu 3/12','Fri 3/13','Sat 3/14','Sun 3/15','Mon 3/16'];
+
+  resources.forEach(section => {
+    // Section header
+    const sRow = document.createElement('tr');
+    sRow.className = 'section-row';
+    sRow.innerHTML = `<td colspan="8" class="resource-cell" style="border-right:none;">
+      <div class="section-header">
+        <span class="section-toggle">&#9660;</span>
+        ${section.section}
+      </div>
+    </td>`;
+    body.appendChild(sRow);
+
+    section.items.forEach(res => {
+      const row = document.createElement('tr');
+      // Resource cell
+      const resCell = document.createElement('td');
+      resCell.className = 'resource-cell';
+      resCell.innerHTML = `
+        <div class="resource-info">
+          <div class="resource-avatar ${res.color}">${res.avatar}</div>
+          <div class="resource-details">
+            <div class="resource-name">${res.name}</div>
+            <div class="resource-type">${res.type}</div>
+            <div class="vendor-badge">${res.vendor}</div>
+            <div class="resource-tags">
+              ${res.tags.map(t => `<span class="resource-tag">${t}</span>`).join('')}
+            </div>
+            ${res.queue > 0 ? `<span class="queue-link">Jobs in Queue: ${res.queue}</span>` : ''}
+          </div>
+        </div>
+      `;
+      row.appendChild(resCell);
+
+      // Day cells
+      for (let d = 0; d < 7; d++) {
+        const td = document.createElement('td');
+        if (d === 0) td.className = 'today-col';
+        td.dataset.day = d;
+        td.dataset.resource = res.name;
+
+        // Drop handlers
+        td.addEventListener('dragover', onDragOver);
+        td.addEventListener('dragenter', onDragEnter);
+        td.addEventListener('dragleave', onDragLeave);
+        td.addEventListener('drop', onDrop);
+
+        row.appendChild(td);
+      }
+
+      body.appendChild(row);
+
+      // Place job blocks
+      res.jobs.forEach(job => {
+        if (job.days.length === 0) return;
+        const startDay = job.days[0];
+        const span = job.days.length;
+        const startCell = row.children[startDay + 1]; // +1 for resource col
+
+        const block = document.createElement('div');
+        block.className = `job-block ${job.color}`;
+        if (span > 1) {
+          block.style.width = `calc(${span * 100}% + ${(span - 1) * 1}px)`;
+          block.style.zIndex = '3';
+        }
+        if (job.top) block.style.top = job.top + 'px';
+
+        const dateLabel = span > 1 ? `3/${10 + startDay} - 3/${10 + startDay + span - 1}` : `3/${10 + startDay}`;
+        const dotColors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6'];
+        const dots = [];
+        for (let i = 0; i < Math.min(3, Math.floor(Math.random()*3)+1); i++) {
+          dots.push(`<span class="crew-dot" style="background:${dotColors[i%5]}">${String.fromCharCode(65+Math.floor(Math.random()*26))}${String.fromCharCode(65+Math.floor(Math.random()*26))}</span>`);
+        }
+
+        block.innerHTML = `
+          <div class="block-date">${dateLabel}</div>
+          <div class="block-title">${job.title}</div>
+          <div class="block-crew-dots">${dots.join('')}</div>
+          <div class="extend-handle" title="Drag to extend job duration"></div>
+        `;
+        block.onclick = (e) => { e.stopPropagation(); openScheduledJobEdit(job, res); };
+        startCell.appendChild(block);
+        startCell.style.position = 'relative';
+      });
+    });
+  });
+}
+
+// ============ DRAG & DROP ============
+let draggedJobId = null;
+
+function onDragStart(e) {
+  draggedJobId = e.target.dataset.jobId;
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.drop-target').forEach(el => el.classList.remove('drop-target'));
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragEnter(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drop-target');
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drop-target');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drop-target');
+  if (!draggedJobId) return;
+
+  const day = parseInt(e.currentTarget.dataset.day);
+  const resource = e.currentTarget.dataset.resource;
+  const job = unassignedJobs.find(j => j.id === draggedJobId);
+  if (!job) return;
+
+  // Create job block in the cell
+  const block = document.createElement('div');
+  const isDraft = draftMode;
+  block.className = `job-block ${isDraft ? 'draft-block' : 'blue'}`;
+  block.innerHTML = `
+    <div class="block-date">3/${10 + day}</div>
+    <div class="block-title">${job.location}</div>
+    <div style="font-size:10px;margin-top:2px;">${job.type}</div>
+    ${isDraft ? '<div style="font-size:9px;font-weight:700;margin-top:2px;">DRAFT</div>' : ''}
+    <div class="extend-handle" title="Drag to extend job duration"></div>
+  `;
+  block.onclick = (e) => { e.stopPropagation(); openJobEdit(job.id); };
+  e.currentTarget.appendChild(block);
+  e.currentTarget.style.position = 'relative';
+
+  // Remove from unassigned
+  const idx = unassignedJobs.findIndex(j => j.id === draggedJobId);
+  if (idx > -1) unassignedJobs.splice(idx, 1);
+  renderJobsList();
+
+  if (isDraft) {
+    draftCount++;
+    document.getElementById('draftCount').textContent = draftCount + ' draft' + (draftCount !== 1 ? 's' : '');
+  }
+
+  showToast(isDraft ? `Draft: ${job.id} placed with ${resource}` : `${job.id} scheduled with ${resource}`);
+  draggedJobId = null;
+}
+
+// ============ DRAFT MODE ============
+function toggleDraftMode() {
+  draftMode = !draftMode;
+  const btn = document.getElementById('draftToggle');
+  const banner = document.getElementById('draftBanner');
+  if (draftMode) {
+    btn.classList.add('draft-active');
+    banner.classList.add('active');
+  } else {
+    btn.classList.remove('draft-active');
+    banner.classList.remove('active');
+  }
+}
+
+function publishDrafts() {
+  document.querySelectorAll('.draft-block').forEach(el => {
+    el.classList.remove('draft-block');
+    el.classList.add('blue');
+    el.style.background = '';
+    el.style.border = '';
+    const draftLabel = el.querySelector('div:last-of-type');
+    if (draftLabel && draftLabel.textContent.includes('DRAFT')) draftLabel.remove();
+  });
+  draftCount = 0;
+  document.getElementById('draftCount').textContent = '0 drafts';
+  showToast('All drafts published successfully');
+  toggleDraftMode();
+}
+
+function discardDrafts() {
+  document.querySelectorAll('.draft-block').forEach(el => el.remove());
+  draftCount = 0;
+  document.getElementById('draftCount').textContent = '0 drafts';
+  showToast('All drafts discarded');
+  toggleDraftMode();
+}
+
+// ============ EDIT PANEL ============
+function openJobEdit(jobId) {
+  const job = unassignedJobs.find(j => j.id === jobId);
+  if (!job) {
+    // might be a scheduled job
+    currentEditJob = { id: jobId };
+    document.getElementById('editJobId').textContent = jobId;
+    document.getElementById('editStatus').textContent = 'Scheduled';
+    document.getElementById('editStatus').className = 'status-pill status-scheduled';
+    showEditTab('details');
+    document.getElementById('editOverlay').classList.add('active');
+    return;
+  }
+  currentEditJob = job;
+  document.getElementById('editJobId').textContent = job.id;
+  document.getElementById('editStatus').textContent = 'Unassigned';
+  document.getElementById('editStatus').className = 'status-pill status-unassigned';
+  showEditTab('details');
+  document.getElementById('editOverlay').classList.add('active');
+}
+
+function openScheduledJobEdit(job, resource) {
+  currentEditJob = { ...job, resource: resource.name, vendor: resource.vendor };
+  document.getElementById('editJobId').textContent = job.id;
+  const statusClass = job.status === 'In Progress' ? 'status-inprogress' : 'status-scheduled';
+  document.getElementById('editStatus').textContent = job.status;
+  document.getElementById('editStatus').className = 'status-pill ' + statusClass;
+  showEditTab('details');
+  document.getElementById('editOverlay').classList.add('active');
+}
+
+function closeEdit() {
+  document.getElementById('editOverlay').classList.remove('active');
+  currentEditJob = null;
+}
+
+function switchTab(el, tab) {
+  document.querySelectorAll('.edit-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  showEditTab(tab);
+}
+
+function showEditTab(tab) {
+  const body = document.getElementById('editBody');
+  const job = currentEditJob || {};
+
+  if (tab === 'details') {
+    body.innerHTML = `
+      <div class="edit-section-title">Job Information</div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Job ID</label>
+          <input type="text" value="${job.id || ''}" readonly style="background:#f3f3f3">
+        </div>
+        <div class="edit-field">
+          <label>Job Type</label>
+          <select>
+            <option ${job.type === 'Conduit Construction' ? 'selected' : ''}>Conduit Construction</option>
+            <option ${job.type === 'Aerial Construction' ? 'selected' : ''}>Aerial Construction</option>
+            <option ${job.type === 'Underground Construction' ? 'selected' : ''}>Underground Construction</option>
+            <option ${job.type === 'Fiber Splicing' ? 'selected' : ''}>Fiber Splicing</option>
+            <option ${job.type === 'Splice Closure' ? 'selected' : ''}>Splice Closure</option>
+            <option ${job.type === 'Fiber Installation' ? 'selected' : ''}>Fiber Installation</option>
+            <option ${job.type === 'QC Inspection' ? 'selected' : ''}>QC Inspection</option>
+            <option ${job.type === 'Permit Prep' ? 'selected' : ''}>Permit Prep</option>
+          </select>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Location</label>
+          <input type="text" value="${job.location || job.title || ''}">
+        </div>
+        <div class="edit-field">
+          <label>Priority</label>
+          <select>
+            <option ${job.priority === 'High' ? 'selected' : ''}>High</option>
+            <option ${job.priority === 'Medium' ? 'selected' : ''}>Medium</option>
+            <option ${job.priority === 'Normal' ? 'selected' : ''}>Normal</option>
+          </select>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Project Milestone</label>
+          <select>
+            <option>Phase 1 - Hartford Ring</option>
+            <option>Phase 2 - West Hartford Ext</option>
+            <option>Phase 3 - Glastonbury Loop</option>
+            <option>Phase 4 - East Corridor</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>Status</label>
+          <select>
+            <option>Unassigned</option>
+            <option>Scheduled</option>
+            <option ${job.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+            <option>Completed</option>
+            <option>On Hold</option>
+          </select>
+          <span class="field-hint">Job remains In Progress until technician or dispatcher updates</span>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field" style="grid-column:1/3">
+          <label>Notes</label>
+          <textarea placeholder="Add notes about this job..."></textarea>
+        </div>
+      </div>
+    `;
+  } else if (tab === 'streetsheet') {
+    body.innerHTML = `
+      <div class="street-sheet-section">
+        <div class="edit-section-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0176d3" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Street Sheet Data — Municipal Reporting
+        </div>
+        <div class="edit-row">
+          <div class="edit-field">
+            <label>Street Name</label>
+            <input type="text" value="${job.location || job.title || ''}" placeholder="Enter street name">
+          </div>
+          <div class="edit-field">
+            <label>Cross Street</label>
+            <input type="text" placeholder="Nearest cross street">
+          </div>
+        </div>
+        <div class="edit-row">
+          <div class="edit-field">
+            <label>Municipality</label>
+            <select>
+              <option>Hartford</option>
+              <option>West Hartford</option>
+              <option>Newington</option>
+              <option>Glastonbury</option>
+              <option>Wethersfield</option>
+              <option>Bloomfield</option>
+              <option>Windsor</option>
+              <option>East Hartford</option>
+              <option>Manchester</option>
+              <option>Vernon</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label>Permit Number</label>
+            <input type="text" placeholder="MUN-YYYY-XXXXX">
+          </div>
+        </div>
+        <div class="edit-row">
+          <div class="edit-field">
+            <label>Footage Installed (ft)</label>
+            <input type="number" placeholder="0" min="0">
+          </div>
+          <div class="edit-field">
+            <label>Footage Type</label>
+            <select>
+              <option>Underground</option>
+              <option>Aerial</option>
+              <option>Direct Buried</option>
+              <option>Existing Conduit</option>
+            </select>
+          </div>
+        </div>
+        <div class="edit-row">
+          <div class="edit-field">
+            <label>Restoration Required</label>
+            <select>
+              <option>None</option>
+              <option>Temporary Patch</option>
+              <option>Permanent Restoration</option>
+              <option>Sidewalk Repair</option>
+              <option>Curb Repair</option>
+            </select>
+          </div>
+          <div class="edit-field">
+            <label>Restoration Status</label>
+            <select>
+              <option>Not Started</option>
+              <option>Temporary Complete</option>
+              <option>Permanent Complete</option>
+              <option>Awaiting City Inspection</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="edit-section-title">Traffic & Safety</div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Traffic Control Required</label>
+          <select>
+            <option>None</option>
+            <option>Flaggers</option>
+            <option>Lane Closure</option>
+            <option>Full Road Closure</option>
+            <option>Police Detail</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>Working Hours Restriction</label>
+          <select>
+            <option>None</option>
+            <option>7AM - 5PM Only</option>
+            <option>9AM - 3PM Only</option>
+            <option>Night Work Required</option>
+          </select>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field" style="grid-column:1/3">
+          <label>Municipal Notes / Special Conditions</label>
+          <textarea placeholder="E.g., No work during school hours near Elementary school, moratorium restrictions, etc."></textarea>
+        </div>
+      </div>
+    `;
+  } else if (tab === 'scheduling') {
+    const startDay = job.days ? job.days[0] : 0;
+    const endDay = job.days ? job.days[job.days.length - 1] : 0;
+    body.innerHTML = `
+      <div class="edit-section-title">Schedule Details</div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Start Date</label>
+          <input type="date" value="2026-03-${String(10 + startDay).padStart(2,'0')}">
+        </div>
+        <div class="edit-field">
+          <label>End Date</label>
+          <input type="date" value="2026-03-${String(10 + endDay).padStart(2,'0')}">
+          <span class="field-hint">Extend end date to add more days to this job</span>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Assigned Resource</label>
+          <input type="text" value="${job.resource || 'Unassigned'}" ${job.resource ? '' : 'style="color:#706e6b"'}>
+        </div>
+        <div class="edit-field">
+          <label>Estimated Duration (hours)</label>
+          <input type="number" value="8" min="1" max="72">
+        </div>
+      </div>
+      <div class="edit-section-title" style="margin-top:16px">Multi-Day Extension</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="toolbar-btn" onclick="showToast('Job extended by 1 day')">+1 Day</button>
+        <button class="toolbar-btn" onclick="showToast('Job extended by 2 days')">+2 Days</button>
+        <button class="toolbar-btn" onclick="showToast('Job extended by 1 week')">+1 Week</button>
+        <button class="toolbar-btn" style="color:var(--sf-red);border-color:var(--sf-red)" onclick="showToast('Job shortened by 1 day')">-1 Day</button>
+      </div>
+      <p style="font-size:11px;color:var(--sf-text-secondary);margin-top:8px;">
+        Job will remain <strong>In Progress</strong> until the assigned technician marks it complete or the dispatcher manually reassigns it.
+      </p>
+    `;
+  } else if (tab === 'vendor') {
+    body.innerHTML = `
+      <div class="edit-section-title">Vendor Assignment</div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Assigned Vendor</label>
+          <select>
+            ${vendors.map(v => `<option ${v === job.vendor ? 'selected' : ''}>${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>Subcontractor</label>
+          <input type="text" placeholder="If applicable">
+          <span class="field-hint">Vendor may further subcontract this work</span>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Vendor Portal Access</label>
+          <select>
+            <option>Has Portal Access</option>
+            <option selected>No Portal Access</option>
+            <option>Pending Invitation</option>
+          </select>
+        </div>
+        <div class="edit-field">
+          <label>Primary Contact</label>
+          <input type="text" placeholder="Vendor contact name">
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field">
+          <label>Contact Phone</label>
+          <input type="tel" placeholder="(555) 000-0000">
+        </div>
+        <div class="edit-field">
+          <label>Contact Email</label>
+          <input type="email" placeholder="vendor@company.com">
+        </div>
+      </div>
+      <div class="edit-section-title" style="margin-top:16px">Vendor Scheduling Workflow</div>
+      <div class="edit-row">
+        <div class="edit-field" style="grid-column:1/3">
+          <label>Notification Method</label>
+          <select>
+            <option>Email Notification (No Portal)</option>
+            <option>Portal Assignment</option>
+            <option>SMS + Email</option>
+            <option>Manual / Phone Call</option>
+          </select>
+          <span class="field-hint">For vendors without portal access, job details are sent via email with a form link for completion updates</span>
+        </div>
+      </div>
+      <div class="edit-row">
+        <div class="edit-field" style="grid-column:1/3">
+          <label>Form Completion Workflow</label>
+          <select>
+            <option>Vendor completes via email link</option>
+            <option>Dispatcher enters on vendor's behalf</option>
+            <option>Vendor completes via portal</option>
+          </select>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function saveEdit() {
+  closeEdit();
+  showToast('Job updated successfully');
+}
+
+function markComplete() {
+  closeEdit();
+  showToast('Job marked as complete');
+}
+
+function extendJob() {
+  showToast('Job extended by 1 day');
+}
+
+// ============ TOAST ============
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${msg}`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ============ INIT ============
+renderJobsList();
+renderGrid();
+</script>
+</body>
+</html>
